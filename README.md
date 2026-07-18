@@ -1,0 +1,1 @@
+Building an infrastructure (docker) composed of Cloudflared, Open WebUI, Postgress and pgadmin. I'm teaching myself about advanced docker compose creation in order to coordinate bringing and entire AI infrastructure up with one docker compose command "docker compose up -d" as we all know and love.
