@@ -1,0 +1,26 @@
+include:
+  - ./cloudflared/cloudflared-compose.yaml
+  - ./postgres/postgres-compose.yaml
+  - ./open-webui/open-webui-compose.yaml
+
+networks:
+  front_end:
+    name: "Cloudflared Front End"
+    labels:
+      com.example.description: "Cloudflared network"
+      com.example.department: "Network Engineering"
+      com.example.label-with-empty-value: "huh"
+
+  back_end:
+    name: "Private Back End"
+    labels:
+      com.example.description: "Private network"
+      com.example.department: "Network Engineering"
+      com.example.label-with-empty-value: "huh, but private"
+
+  postgres-network:
+    name: "PostgreSQL Network"
+    labels:
+      com.example.description: "Postgres Private network"
+      com.example.department: "Network Engineering"
+      com.example.label-with-empty-value: "huh, but PostgreSQL"

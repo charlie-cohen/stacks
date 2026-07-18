@@ -1,0 +1,48 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    env_file:
+      - ./postgres.env
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - back_end
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'pg_isready -U "$${POSTGRES_USER:-postgres}" -d "$${POSTGRES_DB:-postgres}" -h localhost || exit 1',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    stop_grace_period: 120s
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    env_file:
+      - ./postgres.env
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    networks:
+      - back_end
+    healthcheck:
+      test: ["CMD", "wget", "-O", "-", "http://localhost:80/misc/ping"]
+      interval: 10s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+networks:
+  back_end:
+
+volumes:
+  postgres:
+    name: postgres_data
+  pgadmin:
+    name: pgadmin_data
