@@ -68,4 +68,4 @@ The pipeline ran end to end on an earlier build. I am consolidating all inferenc
 ## Results
 
 - Indexed a full electronics textbook, about 2,150 chunks, and answered questions from it with cited sources.
-- [Add: one real question and answer, with the sources shown.]
+
