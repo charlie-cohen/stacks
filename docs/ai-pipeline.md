@@ -38,7 +38,6 @@ flowchart LR
 
 ## GPU and model management (planned)
 
-This is a planned design, not yet deployed.
 
 ```mermaid
 flowchart TB
