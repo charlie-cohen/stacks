@@ -1,0 +1,136 @@
+name: open-webui
+services:
+  open-webui:
+    container_name: open-webui
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+    networks:
+      - frontend-network
+      - backend-network
+
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg18-trixie
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    env_file:
+      - .env
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - POSTGRES_PORT=${POSTGRES_PORT}
+    ports:
+      - 8888:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+    user: root
+    volumes:
+      - ./entrypoint.sh:/entrypoint_custom.sh
+    entrypoint: /entrypoint_custom.sh
+    networks:
+      - backend-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    command: "redis-server --save 30 1 --appendonly yes --maxclients 10000 --timeout 1800 --maxmemory-policy noeviction --requirepass ${REDIS_PASSWORD}"
+    healthcheck:
+      test: "[ $$(redis-cli -a ${REDIS_PASSWORD} --no-auth-warning ping) = 'PONG' ]"
+      start_period: 5s
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+      - SETPCAP
+      - SYS_ADMIN # Add other caps if required by your application
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+    networks:
+      - backend-network
+
+  searxng:
+    container_name: searxng
+    image: searxng/searxng:latest
+    ports:
+      - "8085:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
+    networks:
+      - backend-network
+
+volumes:
+  pgdata:
+    name: pgdata
+  open-webui:
+    name: open-webui_data
+  redis-data:
+    name: redis_data
+  core-data:
+    name: core-data
+  valkey-data:
+    name: valkey-data
+
+networks:
+  frontend-network:
+    external: true
+  backend-network:
+    external: true
